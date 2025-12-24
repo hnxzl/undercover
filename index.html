@@ -24,20 +24,20 @@
 
         .card-flip {
             perspective: 1000px;
-            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            transform-style: preserve-3d;
-        }
-
-        .card-flip.flipped {
-            transform: rotateY(180deg);
+            width: 100%;
+            height: 100%;
         }
 
         .card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-            transition: transform 0.6s;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             transform-style: preserve-3d;
+        }
+
+        .card-flip.flipped .card-inner {
+            transform: rotateY(180deg);
         }
 
         .card-front, .card-back {
@@ -414,15 +414,17 @@
                 
                 <div class="w-full max-w-xs h-48 mb-8 cursor-pointer" id="wordCardContainer" onclick="app.revealWord()">
                     <div class="card-flip w-full h-full rounded-2xl shadow-2xl overflow-hidden">
-                        <div class="card-front bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
-                            <div class="text-center">
-                                <p class="text-white text-lg font-semibold mb-2">Tap to Reveal</p>
-                                <p class="text-blue-200 text-xs">Your Secret Word</p>
+                        <div class="card-inner w-full h-full">
+                            <div class="card-front bg-gradient-to-br from-blue-600 to-blue-700">
+                                <div class="text-center">
+                                    <p class="text-white text-lg font-semibold mb-2">Tap to Reveal</p>
+                                    <p class="text-blue-200 text-xs">Your Secret Word</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card-back bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col items-center justify-center">
-                            <p class="text-slate-500 text-sm mb-4">YOUR WORD</p>
-                            <p id="revealedWord" class="text-6xl font-black text-blue-600 text-center px-4 break-all leading-tight"></p>
+                            <div class="card-back bg-gradient-to-br from-slate-50 to-blue-50">
+                                <p class="text-slate-500 text-sm mb-4">YOUR WORD</p>
+                                <p id="revealedWord" class="text-6xl font-black text-blue-600 text-center px-4 break-all leading-tight"></p>
+                            </div>
                         </div>
                     </div>
                 </div>
