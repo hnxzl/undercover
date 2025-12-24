@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Undercover - Party Game</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb; /* Blue */
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #eff6ff;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 420px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            padding: 32px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: var(--text-main);
+        }
+
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus, input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        /* Player Input specific */
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-add {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .player-list {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 20px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .player-list-item {
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 5px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            font-family: inherit;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Game Card Styles */
+        .game-card {
+            background: var(--accent);
+            border: 2px dashed var(--primary);
+            border-radius: 16px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-card:hover {
+            background: #dbeafe;
+        }
+
+        .game-card.revealed {
+            background: var(--primary);
+            border-style: solid;
+            color: white;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .secret-word {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+            word-break: break-word;
+        }
+
+        .card-hint {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .player-badge {
+            background: #e0f2fe;
+            color: var(--primary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        /* Result Styles */
+        .result-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: left;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .role-label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .word-reveal {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+            text-align: left;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- SCREEN 1: SETUP -->
+    <div id="setup-screen" class="screen active">
+        <h1>Undercover</h1>
+        <p>Masukkan nama pemain</p>
+
+        <div class="form-group">
+            <label>Nama Pemain</label>
+            <div class="input-row">
+                <input type="text" id="player-name-input" placeholder="Ketik nama..." onkeypress="handleEnter(event)">
+                <button class="btn-add" onclick="addPlayer()">+</button>
+            </div>
+        </div>
+
+        <ul id="player-list-display" class="player-list">
+            <!-- List item injected here -->
+        </ul>
+        
+        <div style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
+            Total: <span id="total-count-display">0</span> Pemain
+        </div>
+
+        <div class="form-group">
+            <label for="num-undercover">Jumlah Undercover</label>
+            <input type="number" id="num-undercover" value="1" min="1">
+        </div>
+
+        <div class="form-group">
+            <label for="num-mrwhite">Jumlah Mr. White</label>
+            <input type="number" id="num-mrwhite" value="0" min="0">
+        </div>
+
+        <div id="setup-error" class="error-msg"></div>
+
+        <button class="btn" onclick="startGame()">Mulai Game</button>
+    </div>
+
+    <!-- SCREEN 2: GAMEPLAY -->
+    <div id="game-screen" class="screen">
+        <div class="player-badge" id="player-indicator">Giliran Budi</div>
+        <h2 id="instruction-title">Rahasiakan Layar</h2>
+        <p>Hanya <span id="current-name-span" style="font-weight: bold; color: var(--primary);">Budi</span> yang boleh melihat.</p>
+
+        <div class="game-card" id="game-card" onclick="handleCardClick()">
+            <div id="card-content-hidden">
+                <div class="card-title">Ketuk Kartu</div>
+                <div class="card-hint">Untuk melihat peranmu</div>
+            </div>
+            <div id="card-content-shown" style="display: none;">
+                <div class="card-title" id="role-display">Civilian</div>
+                <div class="secret-word" id="word-display">KOPI</div>
+                <div class="card-hint">Ketuk lagi untuk menutup</div>
+            </div>
+        </div>
+
+        <button id="next-btn" class="btn" style="display: none;" onclick="nextPlayer()">Lanjut ke Teman Berikutnya</button>
+    </div>
+
+    <!-- SCREEN 3: RESULT -->
+    <div id="result-screen" class="screen">
+        <h1>Permainan Dimulai!</h1>
+        <p>Semua identitas telah dibagikan. Silakan berdiskusi.</p>
+
+        <div class="result-box">
+            <div class="result-item">
+                <span class="role-label">Civilian (Mayoritas)</span>
+                <span class="word-reveal" id="res-civ-word">?</span>
+            </div>
+            <div class="result-item">
+                <span class="role-label">Undercover (Minoritas)</span>
+                <span class="word-reveal" id="res-und-word">?</span>
+            </div>
+        </div>
+
+        <button class="btn" onclick="resetGame()">Main Lagi</button>
+    </div>
+
+</div>
+
+<script>
+    // --- DATABASE KATA ---
+    const wordDatabase = [
+        ["Kopi", "Teh"], ["Kucing", "Anjing"], ["Emas", "Perak"], ["Matahari", "Bulan"],
+        ["Bakso", "Mie Ayam"], ["Bioskop", "Netflix"], ["Polisi", "Tentara"], ["Dokter", "Perawat"],
+        ["Pesawat", "Helikopter"], ["Sepatu", "Sandal"], ["Nasi Goreng", "Mie Goreng"], ["Jakarta", "Bandung"],
+        ["Apel", "Jeruk"], ["Singa", "Macan"], ["Motor", "Mobil"], ["Youtube", "TikTok"],
+        ["Gunung", "Pantai"], ["Laptop", "Komputer"], ["Sepak Bola", "Futsal"], ["Renang", "Menyelam"],
+        ["Gojek", "Grab"], ["Indomie", "Mie Sedaap"], ["Saus", "Kecap"], ["Cokelat", "Keju"],
+        ["Es Krim", "Es Teler"], ["Hujan", "Salju"], ["Kipas Angin", "AC"], ["Buku", "Komik"],
+        ["Pensil", "Pulpen"], ["Meja", "Kursi"], ["Kacamata", "Softlens"], ["Jam Tangan", "Jam Dinding"],
+        ["Pintu", "Jendela"], ["Kasur", "Sofa"], ["Sendok", "Garpu"], ["Gula", "Garam"],
+        ["Bawang Merah", "Bawang Putih"], ["Merpati", "Elang"], ["Ular", "Cacing"], ["Hiu", "Paus"],
+        ["Zombie", "Hantu"], ["Vampir", "Werewolf"], ["Batman", "Superman"], ["Naruto", "Sasuke"],
+        ["Facebook", "Instagram"], ["Gitar", "Piano"], ["Beras", "Gandum"], ["Roti", "Donat"],
+        ["Sepeda", "Skuter"], ["Kereta", "Bus"]
+    ];
+
+    // --- STATE ---
+    let addedNames = [];
+    let players = [];
+    let currentPlayerIndex = 0;
+    let cardState = 'hidden'; 
+    let currentCivWord = "";
+    let currentUndWord = "";
+
+    // --- DOM ELEMENTS ---
+    const screens = {
+        setup: document.getElementById('setup-screen'),
+        game: document.getElementById('game-screen'),
+        result: document.getElementById('result-screen')
+    };
+
+    const ui = {
+        nameInput: document.getElementById('player-name-input'),
+        playerList: document.getElementById('player-list-display'),
+        totalCount: document.getElementById('total-count-display'),
+        numUndercover: document.getElementById('num-undercover'),
+        numMrWhite: document.getElementById('num-mrwhite'),
+        errorMsg: document.getElementById('setup-error'),
+        playerIndicator: document.getElementById('player-indicator'),
+        currentNameSpan: document.getElementById('current-name-span'),
+        gameCard: document.getElementById('game-card'),
+        hiddenContent: document.getElementById('card-content-hidden'),
+        shownContent: document.getElementById('card-content-shown'),
+        roleDisplay: document.getElementById('role-display'),
+        wordDisplay: document.getElementById('word-display'),
+        nextBtn: document.getElementById('next-btn'),
+        resCivWord: document.getElementById('res-civ-word'),
+        resUndWord: document.getElementById('res-und-word')
+    };
+
+    // --- FUNCTIONS ---
+
+    function handleEnter(e) {
+        if(e.key === 'Enter') addPlayer();
+    }
+
+    function addPlayer() {
+        const name = ui.nameInput.value.trim();
+        if (!name) return;
+        
+        addedNames.push(name);
+        ui.nameInput.value = '';
+        renderPlayerList();
+        ui.errorMsg.style.display = 'none';
+    }
+
+    function removePlayer(index) {
+        addedNames.splice(index, 1);
+        renderPlayerList();
+    }
+
+    function renderPlayerList() {
+        ui.playerList.innerHTML = '';
+        addedNames.forEach((name, index) => {
+            const li = document.createElement('li');
+            li.className = 'player-list-item';
+            li.innerHTML = `
+                <span>${name}</span>
+                <button class="btn-remove" onclick="removePlayer(${index})">&times;</button>
+            `;
+            ui.playerList.appendChild(li);
+        });
+        ui.totalCount.innerText = addedNames.length;
+    }
+
+    function showScreen(screenName) {
+        Object.values(screens).forEach(s => s.classList.remove('active'));
+        screens[screenName].classList.add('active');
+    }
+
+    function startGame() {
+        const total = addedNames.length;
+        const ucCount = parseInt(ui.numUndercover.value);
+        const mwCount = parseInt(ui.numMrWhite.value);
+        const civCount = total - ucCount - mwCount;
+
+        // Validation
+        if (total < 3) return showError("Minimal 3 pemain diperlukan. Tambahkan nama lagi.");
+        if (ucCount < 1) return showError("Harus ada minimal 1 Undercover.");
+        if (civCount < 1) return showError("Harus ada minimal 1 Civilian.");
+        if (civCount <= ucCount) return showError("Civilian harus lebih banyak dari Undercover.");
+        
+        ui.errorMsg.style.display = 'none';
+
+        // Word Selection
+        const pair = wordDatabase[Math.floor(Math.random() * wordDatabase.length)];
+        const swap = Math.random() > 0.5;
+        currentCivWord = swap ? pair[0] : pair[1];
+        currentUndWord = swap ? pair[1] : pair[0];
+
+        // Assign Roles
+        let roles = [];
+        for (let i = 0; i < civCount; i++) roles.push({ type: 'Civilian', word: currentCivWord });
+        for (let i = 0; i < ucCount; i++) roles.push({ type: 'Undercover', word: currentUndWord });
+        for (let i = 0; i < mwCount; i++) roles.push({ type: 'Mr. White', word: null });
+
+        // Shuffle Roles
+        roles = roles.sort(() => Math.random() - 0.5);
+
+        // Map Roles to Names (Names are NOT shuffled, Roles are)
+        // This ensures the order of play follows the input order (usually circle order)
+        players = addedNames.map((name, index) => {
+            return {
+                name: name,
+                type: roles[index].type,
+                word: roles[index].word
+            };
+        });
+
+        // Init Game State
+        currentPlayerIndex = 0;
+        prepareTurn();
+        showScreen('game');
+    }
+
+    function showError(msg) {
+        ui.errorMsg.innerText = msg;
+        ui.errorMsg.style.display = 'block';
+    }
+
+    function prepareTurn() {
+        cardState = 'hidden';
+        const currentPlayer = players[currentPlayerIndex];
+        
+        ui.playerIndicator.innerText = `Giliran ${currentPlayer.name}`;
+        ui.currentNameSpan.innerText = currentPlayer.name;
+        ui.nextBtn.style.display = 'none';
+        
+        // Reset Card UI
+        ui.gameCard.classList.remove('revealed');
+        ui.hiddenContent.style.display = 'block';
+        ui.shownContent.style.display = 'none';
+        
+        ui.gameCard.style.pointerEvents = 'auto';
+    }
+
+    function handleCardClick() {
+        const player = players[currentPlayerIndex];
+
+        if (cardState === 'hidden') {
+            // Reveal
+            cardState = 'shown';
+            ui.gameCard.classList.add('revealed');
+            ui.hiddenContent.style.display = 'none';
+            ui.shownContent.style.display = 'block';
+
+            if (player.type === 'Mr. White') {
+                ui.roleDisplay.innerText = "Kamu Mr. White";
+                ui.wordDisplay.innerText = "???";
+                ui.wordDisplay.style.fontSize = "40px";
+                document.querySelector('#card-content-shown .card-hint').innerText = "Kamu tidak punya kata. Berpura-puralah!";
+            } else {
+                ui.roleDisplay.innerText = "Kata Rahasia";
+                ui.wordDisplay.innerText = player.word;
+                ui.wordDisplay.style.fontSize = "32px";
+                document.querySelector('#card-content-shown .card-hint').innerText = "Ketuk lagi untuk menutup";
+            }
+
+            ui.nextBtn.style.display = 'none'; 
+
+        } else {
+            // Hide (End of viewing)
+            cardState = 'hidden';
+            ui.gameCard.classList.remove('revealed');
+            ui.hiddenContent.style.display = 'block';
+            ui.shownContent.style.display = 'none';
+            
+            ui.nextBtn.style.display = 'block';
+            ui.gameCard.style.pointerEvents = 'none';
+            document.querySelector('#card-content-hidden .card-title').innerText = "Selesai";
+            document.querySelector('#card-content-hidden .card-hint').innerText = "Berikan ke teman berikutnya";
+        }
+    }
+
+    function nextPlayer() {
+        currentPlayerIndex++;
+        if (currentPlayerIndex < players.length) {
+            prepareTurn();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        ui.resCivWord.innerText = currentCivWord;
+        ui.resUndWord.innerText = currentUndWord;
+        showScreen('result');
+    }
+
+    function resetGame() {
+        showScreen('setup');
+    }
+</script>
+
+</body>
+</html>
