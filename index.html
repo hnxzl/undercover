@@ -1,576 +1,1215 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Undercover - Party Game</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Undercover Game</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        :root {
-            --primary: #2563eb; /* Blue */
-            --primary-dark: #1e40af;
-            --secondary: #64748b;
-            --bg: #f1f5f9;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --accent: #eff6ff;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        }
-
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
-        .container {
-            background: var(--card-bg);
-            width: 100%;
-            max-width: 420px;
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            padding: 32px 24px;
-            text-align: center;
+        .card-flip {
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-style: preserve-3d;
+        }
+
+        .card-flip.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-inner {
             position: relative;
-            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
         }
 
-        h1 {
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 28px;
-            margin-bottom: 8px;
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        p {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-            line-height: 1.5;
+        .card-back {
+            transform: rotateY(180deg);
         }
 
-        .screen {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
-        .screen.active {
-            display: block;
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: .7;
+            }
+        }
+
+        .slide-in-animation {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
 
-        /* Form Styles */
-        .form-group {
-            margin-bottom: 16px;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 6px;
-            color: var(--text-main);
-        }
-
-        input[type="number"], input[type="text"] {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-family: inherit;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        input[type="number"]:focus, input[type="text"]:focus {
-            border-color: var(--primary);
-        }
-
-        /* Player Input specific */
-        .input-row {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-add {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0 20px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .player-list {
-            list-style: none;
-            text-align: left;
-            margin-bottom: 20px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .player-list-item {
-            background: #f8fafc;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .btn-remove {
-            background: none;
-            border: none;
-            color: #ef4444;
-            cursor: pointer;
-            font-size: 18px;
-            padding: 0 5px;
-        }
-
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 16px;
-            border-radius: 16px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            font-family: inherit;
-            margin-top: 10px;
-        }
-
-        .btn:hover {
-            background-color: var(--primary-dark);
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        /* Game Card Styles */
-        .game-card {
-            background: var(--accent);
-            border: 2px dashed var(--primary);
-            border-radius: 16px;
-            padding: 40px 20px;
-            margin: 20px 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-height: 200px;
+        .container-phone {
+            max-width: 480px;
+            margin: 0 auto;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
         }
 
-        .game-card:hover {
-            background: #dbeafe;
+        input[type="range"] {
+            cursor: pointer;
         }
 
-        .game-card.revealed {
-            background: var(--primary);
-            border-style: solid;
-            color: white;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .secret-word {
-            font-size: 32px;
-            font-weight: 700;
-            margin: 10px 0;
-            word-break: break-word;
-        }
-
-        .card-hint {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-top: 10px;
-        }
-
-        .player-badge {
-            background: #e0f2fe;
-            color: var(--primary);
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
+        .role-badge {
             display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        /* Result Styles */
-        .result-box {
-            background: #f8fafc;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: left;
-            margin-bottom: 20px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .result-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .result-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-
-        .role-label {
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        .word-reveal {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .error-msg {
-            color: #ef4444;
+            padding: 4px 12px;
+            border-radius: 20px;
             font-size: 12px;
-            margin-top: 5px;
-            display: none;
-            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
+        .role-civilian {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-undercover {
+            background-color: #fed7aa;
+            color: #92400e;
+        }
+
+        .role-mrwhite {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .mode-selector.selected {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .mode-selector.selected .mode-radio div {
+            background-color: #2563eb;
+        }
+
+        .mode-selector.selected .mode-radio {
+            border-color: #2563eb;
+        }
     </style>
-</head>
-<body>
-
-<div class="container">
-    
-    <!-- SCREEN 1: SETUP -->
-    <div id="setup-screen" class="screen active">
-        <h1>Undercover</h1>
-        <p>Masukkan nama pemain</p>
-
-        <div class="form-group">
-            <label>Nama Pemain</label>
-            <div class="input-row">
-                <input type="text" id="player-name-input" placeholder="Ketik nama..." onkeypress="handleEnter(event)">
-                <button class="btn-add" onclick="addPlayer()">+</button>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50">
+    <div id="app" class="container-phone bg-white">
+        <!-- Screen: Auth / Initial -->
+        <div id="authScreen" class="flex flex-col items-center justify-center h-full px-6 fade-in">
+            <div class="mb-8 text-center">
+                <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-slate-700 mb-2">
+                    UNDERCOVER
+                </h1>
+                <p class="text-slate-500 text-sm tracking-widest uppercase">multiplayer word game</p>
             </div>
-        </div>
-
-        <ul id="player-list-display" class="player-list">
-            <!-- List item injected here -->
-        </ul>
-        
-        <div style="text-align: right; font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
-            Total: <span id="total-count-display">0</span> Pemain
-        </div>
-
-        <div class="form-group">
-            <label for="num-undercover">Jumlah Undercover</label>
-            <input type="number" id="num-undercover" value="1" min="1">
-        </div>
-
-        <div class="form-group">
-            <label for="num-mrwhite">Jumlah Mr. White</label>
-            <input type="number" id="num-mrwhite" value="0" min="0">
-        </div>
-
-        <div id="setup-error" class="error-msg"></div>
-
-        <button class="btn" onclick="startGame()">Mulai Game</button>
-    </div>
-
-    <!-- SCREEN 2: GAMEPLAY -->
-    <div id="game-screen" class="screen">
-        <div class="player-badge" id="player-indicator">Giliran Budi</div>
-        <h2 id="instruction-title">Rahasiakan Layar</h2>
-        <p>Hanya <span id="current-name-span" style="font-weight: bold; color: var(--primary);">Budi</span> yang boleh melihat.</p>
-
-        <div class="game-card" id="game-card" onclick="handleCardClick()">
-            <div id="card-content-hidden">
-                <div class="card-title">Ketuk Kartu</div>
-                <div class="card-hint">Untuk melihat peranmu</div>
-            </div>
-            <div id="card-content-shown" style="display: none;">
-                <div class="card-title" id="role-display">Civilian</div>
-                <div class="secret-word" id="word-display">KOPI</div>
-                <div class="card-hint">Ketuk lagi untuk menutup</div>
-            </div>
-        </div>
-
-        <button id="next-btn" class="btn" style="display: none;" onclick="nextPlayer()">Lanjut ke Teman Berikutnya</button>
-    </div>
-
-    <!-- SCREEN 3: RESULT -->
-    <div id="result-screen" class="screen">
-        <h1>Permainan Dimulai!</h1>
-        <p>Semua identitas telah dibagikan. Silakan berdiskusi.</p>
-
-        <div class="result-box">
-            <div class="result-item">
-                <span class="role-label">Civilian (Mayoritas)</span>
-                <span class="word-reveal" id="res-civ-word">?</span>
-            </div>
-            <div class="result-item">
-                <span class="role-label">Undercover (Minoritas)</span>
-                <span class="word-reveal" id="res-und-word">?</span>
-            </div>
-        </div>
-
-        <button class="btn" onclick="resetGame()">Main Lagi</button>
-    </div>
-
-</div>
-
-<script>
-    // --- DATABASE KATA ---
-    const wordDatabase = [
-        ["Kopi", "Teh"], ["Kucing", "Anjing"], ["Emas", "Perak"], ["Matahari", "Bulan"],
-        ["Bakso", "Mie Ayam"], ["Bioskop", "Netflix"], ["Polisi", "Tentara"], ["Dokter", "Perawat"],
-        ["Pesawat", "Helikopter"], ["Sepatu", "Sandal"], ["Nasi Goreng", "Mie Goreng"], ["Jakarta", "Bandung"],
-        ["Apel", "Jeruk"], ["Singa", "Macan"], ["Motor", "Mobil"], ["Youtube", "TikTok"],
-        ["Gunung", "Pantai"], ["Laptop", "Komputer"], ["Sepak Bola", "Futsal"], ["Renang", "Menyelam"],
-        ["Gojek", "Grab"], ["Indomie", "Mie Sedaap"], ["Saus", "Kecap"], ["Cokelat", "Keju"],
-        ["Es Krim", "Es Teler"], ["Hujan", "Salju"], ["Kipas Angin", "AC"], ["Buku", "Komik"],
-        ["Pensil", "Pulpen"], ["Meja", "Kursi"], ["Kacamata", "Softlens"], ["Jam Tangan", "Jam Dinding"],
-        ["Pintu", "Jendela"], ["Kasur", "Sofa"], ["Sendok", "Garpu"], ["Gula", "Garam"],
-        ["Bawang Merah", "Bawang Putih"], ["Merpati", "Elang"], ["Ular", "Cacing"], ["Hiu", "Paus"],
-        ["Zombie", "Hantu"], ["Vampir", "Werewolf"], ["Batman", "Superman"], ["Naruto", "Sasuke"],
-        ["Facebook", "Instagram"], ["Gitar", "Piano"], ["Beras", "Gandum"], ["Roti", "Donat"],
-        ["Sepeda", "Skuter"], ["Kereta", "Bus"]
-    ];
-
-    // --- STATE ---
-    let addedNames = [];
-    let players = [];
-    let currentPlayerIndex = 0;
-    let cardState = 'hidden'; 
-    let currentCivWord = "";
-    let currentUndWord = "";
-
-    // --- DOM ELEMENTS ---
-    const screens = {
-        setup: document.getElementById('setup-screen'),
-        game: document.getElementById('game-screen'),
-        result: document.getElementById('result-screen')
-    };
-
-    const ui = {
-        nameInput: document.getElementById('player-name-input'),
-        playerList: document.getElementById('player-list-display'),
-        totalCount: document.getElementById('total-count-display'),
-        numUndercover: document.getElementById('num-undercover'),
-        numMrWhite: document.getElementById('num-mrwhite'),
-        errorMsg: document.getElementById('setup-error'),
-        playerIndicator: document.getElementById('player-indicator'),
-        currentNameSpan: document.getElementById('current-name-span'),
-        gameCard: document.getElementById('game-card'),
-        hiddenContent: document.getElementById('card-content-hidden'),
-        shownContent: document.getElementById('card-content-shown'),
-        roleDisplay: document.getElementById('role-display'),
-        wordDisplay: document.getElementById('word-display'),
-        nextBtn: document.getElementById('next-btn'),
-        resCivWord: document.getElementById('res-civ-word'),
-        resUndWord: document.getElementById('res-und-word')
-    };
-
-    // --- FUNCTIONS ---
-
-    function handleEnter(e) {
-        if(e.key === 'Enter') addPlayer();
-    }
-
-    function addPlayer() {
-        const name = ui.nameInput.value.trim();
-        if (!name) return;
-        
-        addedNames.push(name);
-        ui.nameInput.value = '';
-        renderPlayerList();
-        ui.errorMsg.style.display = 'none';
-    }
-
-    function removePlayer(index) {
-        addedNames.splice(index, 1);
-        renderPlayerList();
-    }
-
-    function renderPlayerList() {
-        ui.playerList.innerHTML = '';
-        addedNames.forEach((name, index) => {
-            const li = document.createElement('li');
-            li.className = 'player-list-item';
-            li.innerHTML = `
-                <span>${name}</span>
-                <button class="btn-remove" onclick="removePlayer(${index})">&times;</button>
-            `;
-            ui.playerList.appendChild(li);
-        });
-        ui.totalCount.innerText = addedNames.length;
-    }
-
-    function showScreen(screenName) {
-        Object.values(screens).forEach(s => s.classList.remove('active'));
-        screens[screenName].classList.add('active');
-    }
-
-    function startGame() {
-        const total = addedNames.length;
-        const ucCount = parseInt(ui.numUndercover.value);
-        const mwCount = parseInt(ui.numMrWhite.value);
-        const civCount = total - ucCount - mwCount;
-
-        // Validation
-        if (total < 3) return showError("Minimal 3 pemain diperlukan. Tambahkan nama lagi.");
-        if (ucCount < 1) return showError("Harus ada minimal 1 Undercover.");
-        if (civCount < 1) return showError("Harus ada minimal 1 Civilian.");
-        if (civCount <= ucCount) return showError("Civilian harus lebih banyak dari Undercover.");
-        
-        ui.errorMsg.style.display = 'none';
-
-        // Word Selection
-        const pair = wordDatabase[Math.floor(Math.random() * wordDatabase.length)];
-        const swap = Math.random() > 0.5;
-        currentCivWord = swap ? pair[0] : pair[1];
-        currentUndWord = swap ? pair[1] : pair[0];
-
-        // Assign Roles
-        let roles = [];
-        for (let i = 0; i < civCount; i++) roles.push({ type: 'Civilian', word: currentCivWord });
-        for (let i = 0; i < ucCount; i++) roles.push({ type: 'Undercover', word: currentUndWord });
-        for (let i = 0; i < mwCount; i++) roles.push({ type: 'Mr. White', word: null });
-
-        // Shuffle Roles
-        roles = roles.sort(() => Math.random() - 0.5);
-
-        // Map Roles to Names (Names are NOT shuffled, Roles are)
-        // This ensures the order of play follows the input order (usually circle order)
-        players = addedNames.map((name, index) => {
-            return {
-                name: name,
-                type: roles[index].type,
-                word: roles[index].word
-            };
-        });
-
-        // Init Game State
-        currentPlayerIndex = 0;
-        prepareTurn();
-        showScreen('game');
-    }
-
-    function showError(msg) {
-        ui.errorMsg.innerText = msg;
-        ui.errorMsg.style.display = 'block';
-    }
-
-    function prepareTurn() {
-        cardState = 'hidden';
-        const currentPlayer = players[currentPlayerIndex];
-        
-        ui.playerIndicator.innerText = `Giliran ${currentPlayer.name}`;
-        ui.currentNameSpan.innerText = currentPlayer.name;
-        ui.nextBtn.style.display = 'none';
-        
-        // Reset Card UI
-        ui.gameCard.classList.remove('revealed');
-        ui.hiddenContent.style.display = 'block';
-        ui.shownContent.style.display = 'none';
-        
-        ui.gameCard.style.pointerEvents = 'auto';
-    }
-
-    function handleCardClick() {
-        const player = players[currentPlayerIndex];
-
-        if (cardState === 'hidden') {
-            // Reveal
-            cardState = 'shown';
-            ui.gameCard.classList.add('revealed');
-            ui.hiddenContent.style.display = 'none';
-            ui.shownContent.style.display = 'block';
-
-            if (player.type === 'Mr. White') {
-                ui.roleDisplay.innerText = "Kamu Mr. White";
-                ui.wordDisplay.innerText = "???";
-                ui.wordDisplay.style.fontSize = "40px";
-                document.querySelector('#card-content-shown .card-hint').innerText = "Kamu tidak punya kata. Berpura-puralah!";
-            } else {
-                ui.roleDisplay.innerText = "Kata Rahasia";
-                ui.wordDisplay.innerText = player.word;
-                ui.wordDisplay.style.fontSize = "32px";
-                document.querySelector('#card-content-shown .card-hint').innerText = "Ketuk lagi untuk menutup";
-            }
-
-            ui.nextBtn.style.display = 'none'; 
-
-        } else {
-            // Hide (End of viewing)
-            cardState = 'hidden';
-            ui.gameCard.classList.remove('revealed');
-            ui.hiddenContent.style.display = 'block';
-            ui.shownContent.style.display = 'none';
             
-            ui.nextBtn.style.display = 'block';
-            ui.gameCard.style.pointerEvents = 'none';
-            document.querySelector('#card-content-hidden .card-title').innerText = "Selesai";
-            document.querySelector('#card-content-hidden .card-hint').innerText = "Berikan ke teman berikutnya";
-        }
-    }
+            <div class="space-y-3 w-full max-w-sm">
+                <input 
+                    id="playerName" 
+                    type="text" 
+                    placeholder="Your Name" 
+                    class="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition"
+                    maxlength="20"
+                >
+                
+                <button 
+                    onclick="app.goToCreateRoom()" 
+                    class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition transform hover:scale-105"
+                >
+                    Create Room
+                </button>
+                
+                <button 
+                    onclick="app.goToJoinRoom()" 
+                    class="w-full py-3 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition"
+                >
+                    Join Room
+                </button>
+            </div>
+            
+            <div class="mt-12 text-center text-xs text-slate-400">
+                <p>🎮 Play with friends and find the undercover agent!</p>
+            </div>
+        </div>
 
-    function nextPlayer() {
-        currentPlayerIndex++;
-        if (currentPlayerIndex < players.length) {
-            prepareTurn();
-        } else {
-            endGame();
-        }
-    }
+        <!-- Screen: Create Room -->
+        <div id="createRoomScreen" class="hidden flex flex-col h-full px-6 py-8">
+            <div class="mb-6">
+                <button onclick="app.goToAuth()" class="text-blue-600 font-semibold text-sm">← Back</button>
+                <h2 class="text-3xl font-bold text-slate-800 mt-4">Create Room</h2>
+                <p class="text-slate-500 text-sm mt-1">Choose game mode</p>
+            </div>
 
-    function endGame() {
-        ui.resCivWord.innerText = currentCivWord;
-        ui.resUndWord.innerText = currentUndWord;
-        showScreen('result');
-    }
+            <div class="flex-1 space-y-4">
+                <!-- Mode 1: Classic (Undercover) -->
+                <div 
+                    onclick="app.selectGameMode('undercover')" 
+                    id="modeUndercover"
+                    class="mode-selector p-6 rounded-xl border-2 border-slate-200 cursor-pointer transition hover:border-blue-600 hover:bg-blue-50"
+                >
+                    <div class="flex items-start gap-4">
+                        <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center mode-radio">
+                            <div class="w-3 h-3 rounded-full bg-transparent"></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 mb-1">Classic Mode</h3>
+                            <p class="text-sm text-slate-600 mb-2">Find the undercover agent</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Civilians</span>
+                                <span class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">1 Undercover</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    function resetGame() {
-        showScreen('setup');
-    }
-</script>
+                <!-- Mode 2: Mr. White -->
+                <div 
+                    onclick="app.selectGameMode('mrwhite')" 
+                    id="modeMrWhite"
+                    class="mode-selector p-6 rounded-xl border-2 border-slate-200 cursor-pointer transition hover:border-blue-600 hover:bg-blue-50"
+                >
+                    <div class="flex items-start gap-4">
+                        <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center mode-radio">
+                            <div class="w-3 h-3 rounded-full bg-transparent"></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 mb-1">Mr. White Mode</h3>
+                            <p class="text-sm text-slate-600 mb-2">Find the undercover & Mr. White</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Civilians</span>
+                                <span class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full">1 Undercover</span>
+                                <span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">1 Mr. White</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Mode 3: Custom -->
+                <div 
+                    onclick="app.selectGameMode('custom')" 
+                    id="modeCustom"
+                    class="mode-selector p-6 rounded-xl border-2 border-slate-200 cursor-pointer transition hover:border-blue-600 hover:bg-blue-50"
+                >
+                    <div class="flex items-start gap-4">
+                        <div class="w-6 h-6 rounded-full border-2 border-slate-300 flex items-center justify-center mode-radio">
+                            <div class="w-3 h-3 rounded-full bg-transparent"></div>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-slate-800 mb-1">Custom Mode</h3>
+                            <p class="text-sm text-slate-600 mb-2">Set your own rules</p>
+                            <div class="flex gap-2 flex-wrap">
+                                <span class="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Configure settings</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Custom Settings (Hidden by default) -->
+                <div id="customSettings" class="hidden bg-slate-50 rounded-lg p-4 space-y-4 border border-slate-200">
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-3">Undercover Count</label>
+                        <div class="flex gap-2">
+                            <input 
+                                id="customUndercoverCount" 
+                                type="number" 
+                                min="1" 
+                                max="5" 
+                                value="1"
+                                class="flex-1 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-center font-semibold text-lg"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-700 font-semibold mb-3">Mr. White Count</label>
+                        <div class="flex gap-2">
+                            <input 
+                                id="customMrWhiteCount" 
+                                type="number" 
+                                min="0" 
+                                max="3" 
+                                value="0"
+                                class="flex-1 px-4 py-2 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-center font-semibold text-lg"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button 
+                onclick="app.createRoom()" 
+                id="createRoomBtn"
+                disabled
+                class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                Create & Host
+            </button>
+        </div>
+
+        <!-- Screen: Join Room -->
+        <div id="joinRoomScreen" class="hidden flex flex-col h-full px-6 py-8">
+            <div class="mb-6">
+                <button onclick="app.goToAuth()" class="text-blue-600 font-semibold text-sm">← Back</button>
+                <h2 class="text-3xl font-bold text-slate-800 mt-4">Join Room</h2>
+                <p class="text-slate-500 text-sm mt-1">Enter the room code</p>
+            </div>
+
+            <div class="flex-1 space-y-4">
+                <input 
+                    id="roomCodeInput" 
+                    type="text" 
+                    placeholder="Room Code (e.g., ABCD)" 
+                    class="w-full px-4 py-4 border-2 border-slate-200 rounded-lg text-center text-2xl font-bold tracking-widest focus:outline-none focus:border-blue-500 transition uppercase"
+                    maxlength="4"
+                >
+                <div id="joinError" class="hidden text-red-500 text-sm text-center"></div>
+            </div>
+
+            <button 
+                onclick="app.joinRoom()" 
+                class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition mb-4"
+            >
+                Join
+            </button>
+        </div>
+
+        <!-- Screen: Lobby -->
+        <div id="lobbyScreen" class="hidden flex flex-col h-full px-6 py-8 overflow-hidden">
+            <div class="mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-500 text-sm">Room Code</p>
+                        <h2 class="text-4xl font-black text-blue-600 tracking-widest" id="roomCodeDisplay"></h2>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-slate-500 text-sm">Players</p>
+                        <p class="text-3xl font-bold text-slate-800" id="playerCountDisplay">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Host Settings (only visible for host) -->
+            <div id="hostSettingsSection" class="hidden bg-blue-50 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-slate-700 mb-3">Game Settings</h3>
+                <div class="flex gap-4 text-sm">
+                    <div>
+                        <p class="text-slate-600">Undercover</p>
+                        <p class="font-bold text-amber-600 text-lg" id="hostUndercoverCount">1</p>
+                    </div>
+                    <div>
+                        <p class="text-slate-600">Mr. White</p>
+                        <p class="font-bold text-gray-600 text-lg" id="hostMrWhiteCount">1</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Players List -->
+            <div class="flex-1 overflow-y-auto mb-6">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3 uppercase tracking-wider">Players</h3>
+                <div id="playersListContainer" class="space-y-2"></div>
+            </div>
+
+            <!-- Buttons -->
+            <div id="hostButtonsSection" class="hidden space-y-3 mb-4">
+                <button 
+                    onclick="app.startGame()" 
+                    id="startGameBtn"
+                    class="w-full py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:shadow-lg transition"
+                    disabled
+                >
+                    Start Game
+                </button>
+                <button 
+                    onclick="app.goToAuth()" 
+                    class="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition"
+                >
+                    Leave
+                </button>
+            </div>
+
+            <div id="playerButtonsSection" class="hidden space-y-3 mb-4">
+                <p class="text-center text-slate-500 text-sm">Waiting for host to start game...</p>
+                <button 
+                    onclick="app.goToAuth()" 
+                    class="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition"
+                >
+                    Leave
+                </button>
+            </div>
+        </div>
+
+        <!-- Screen: Game Play -->
+        <div id="gamePlayScreen" class="hidden flex flex-col h-full px-6 py-8 overflow-hidden">
+            <div class="mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-slate-500 text-xs uppercase tracking-wider">Room</p>
+                        <p class="text-2xl font-black text-blue-600" id="gameRoomCodeDisplay"></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-slate-500 text-xs uppercase tracking-wider">Players</p>
+                        <p class="text-2xl font-bold text-slate-800" id="gamePlayerCountDisplay">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Player Card -->
+            <div class="flex-1 flex flex-col items-center justify-center">
+                <p class="text-slate-500 text-sm mb-4 uppercase tracking-wider">Your Word</p>
+                
+                <div class="w-full max-w-xs h-48 mb-8 cursor-pointer" id="wordCardContainer" onclick="app.revealWord()">
+                    <div class="card-flip w-full h-full rounded-2xl shadow-2xl overflow-hidden">
+                        <div class="card-front bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center">
+                            <div class="text-center">
+                                <p class="text-white text-lg font-semibold mb-2">Tap to Reveal</p>
+                                <p class="text-blue-200 text-xs">Your Secret Word</p>
+                            </div>
+                        </div>
+                        <div class="card-back bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col items-center justify-center">
+                            <p class="text-slate-500 text-sm mb-2">YOUR WORD</p>
+                            <p id="revealedWord" class="text-5xl font-black text-blue-600 text-center px-4 break-words"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="yourRoleDisplay" class="text-center mb-6"></div>
+            </div>
+
+            <!-- Players List -->
+            <div class="mb-6 bg-slate-50 rounded-lg p-4">
+                <h3 class="text-sm font-semibold text-slate-600 mb-3 uppercase tracking-wider">Other Players</h3>
+                <div id="gamePlayersListContainer" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <!-- Game Actions -->
+            <button 
+                onclick="app.finishGame()" 
+                class="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition"
+            >
+                End Game
+            </button>
+        </div>
+
+        <!-- Screen: Game Finished -->
+        <div id="finishedScreen" class="hidden flex flex-col h-full px-6 py-8">
+            <div class="flex-1 flex flex-col items-center justify-center text-center">
+                <h2 class="text-4xl font-black text-slate-800 mb-4">Game Ended</h2>
+                
+                <div id="finalPlayersDisplay" class="w-full max-w-sm bg-slate-50 rounded-lg p-6 mb-8 space-y-3"></div>
+                
+                <p class="text-slate-500 text-sm mb-8">Thanks for playing!</p>
+            </div>
+
+            <button 
+                onclick="app.goToAuth()" 
+                class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition mb-4"
+            >
+                Back to Home
+            </button>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="hidden fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-6 flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                <p id="spinnerText" class="text-slate-600 font-semibold">Loading...</p>
+            </div>
+        </div>
+
+        <!-- Error Toast -->
+        <div id="errorToast" class="hidden fixed bottom-4 left-4 right-4 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm z-50 slide-in-animation">
+            <p id="errorToastText"></p>
+        </div>
+
+        <!-- Success Toast -->
+        <div id="successToast" class="hidden fixed bottom-4 left-4 right-4 bg-green-500 text-white px-4 py-3 rounded-lg shadow-lg text-sm z-50 slide-in-animation">
+            <p id="successToastText"></p>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONSTANTS ====================
+        const SUPABASE_URL = 'https://rlwxtxpvlkvcesmzpfds.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_CYfxMrT0cxLRLzD7rM8pLg_RDLu3_gb';
+
+        // 100 Pairs of closely related Indonesian words (Thematically similar for difficulty)
+        const WORD_DATABASE = [
+            ["Kopi", "Teh"],
+            ["Singa", "Macan"],
+            ["Polisi", "Tentara"],
+            ["Ayah", "Ibu"],
+            ["Matahari", "Bulan"],
+            ["Mobil", "Motor"],
+            ["Rumah", "Apartemen"],
+            ["Sekolah", "Universitas"],
+            ["Emas", "Perak"],
+            ["Gajah", "Badak"],
+            ["Burung", "Kupu-kupu"],
+            ["Ikan", "Udang"],
+            ["Pizza", "Pasta"],
+            ["Sepatu", "Sandal"],
+            ["Kemeja", "Kaos"],
+            ["Jaket", "Jas"],
+            ["Topi", "Topi Koki"],
+            ["Kacamata", "Lensa Kontak"],
+            ["Jam", "Jam Tangan"],
+            ["Cincin", "Kalung"],
+            ["Piring", "Mangkuk"],
+            ["Garpu", "Sendok"],
+            ["Pisau", "Gunting"],
+            ["Meja", "Kursi"],
+            ["Tempat Tidur", "Kasur"],
+            ["Lemari", "Rak"],
+            ["Jendela", "Pintu"],
+            ["Dinding", "Plafon"],
+            ["Lantai", "Tangga"],
+            ["Lampu", "Lilin"],
+            ["Televisi", "Radio"],
+            ["Telepon", "Komputer"],
+            ["Keyboard", "Mouse"],
+            ["Monitor", "Layar"],
+            ["Printer", "Scanner"],
+            ["Kamera", "Kamera Video"],
+            ["Mikrofon", "Speaker"],
+            ["Headphone", "Earphone"],
+            ["Remote", "Tombol"],
+            ["Baterai", "Charger"],
+            ["Kabel", "Kawat"],
+            ["Listrik", "Arus"],
+            ["Suhu", "Panas"],
+            ["Dingin", "Beku"],
+            ["Api", "Asap"],
+            ["Angin", "Tornado"],
+            ["Hujan", "Badai"],
+            ["Banjir", "Longsor"],
+            ["Gempa", "Letusan"],
+            ["Awan", "Kabut"],
+            ["Pelangi", "Kilat"],
+            ["Petir", "Guntur"],
+            ["Salju", "Es"],
+            ["Pasir", "Batu"],
+            ["Kerikil", "Lumpur"],
+            ["Laut", "Danau"],
+            ["Sungai", "Anak Sungai"],
+            ["Pantai", "Teluk"],
+            ["Pulau", "Benua"],
+            ["Gunung", "Bukit"],
+            ["Lembah", "Ngarai"],
+            ["Padang", "Taman"],
+            ["Hutan", "Rimba"],
+            ["Pohon", "Tumbuhan"],
+            ["Bunga", "Buah"],
+            ["Daun", "Ranting"],
+            ["Akar", "Batang"],
+            ["Rumput", "Semak"],
+            ["Bunga Matahari", "Mawar"],
+            ["Bunga Tulip", "Bunga Melati"],
+            ["Kucing", "Anjing"],
+            ["Kelinci", "Tikus"],
+            ["Rusa", "Kijang"],
+            ["Unta", "Zebra"],
+            ["Kuda", "Keledai"],
+            ["Sapi", "Kerbau"],
+            ["Babi", "Domba"],
+            ["Ayam", "Itik"],
+            ["Angsa", "Gagak"],
+            ["Elang", "Alap-alap"],
+            ["Hantu", "Setan"],
+            ["Dewa", "Malaikat"],
+            ["Iblis", "Sihir"],
+            ["Mantra", "Kutukan"],
+            ["Dongeng", "Legenda"],
+            ["Cerita", "Novel"],
+            ["Puisi", "Lagu"],
+            ["Musik", "Nada"],
+            ["Melodi", "Harmoni"],
+            ["Gitar", "Biola"],
+            ["Piano", "Seruling"],
+            ["Drum", "Timpani"],
+            ["Suara", "Bunyi"],
+            ["Bisu", "Pekak"],
+            ["Buta", "Penglihatan"],
+            ["Lumpuh", "Cacat"],
+            ["Sakit", "Penyakit"],
+            ["Obat", "Penyembuh"],
+            ["Dokter", "Perawat"]
+        ];
+
+        // ==================== APP STATE ====================
+        const app = {
+            supabase: null,
+            currentUser: {
+                id: null,
+                name: null,
+                roomCode: null
+            },
+            currentRoom: null,
+            gameState: {
+                isHost: false,
+                revealed: false,
+                wordPair: null,
+                myRole: null,
+                myWord: null
+            },
+            selectedMode: null,
+            subscription: null,
+
+            // ==================== INITIALIZATION ====================
+            async init() {
+                // Initialize Supabase
+                const { createClient } = window.supabase;
+                this.supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                // Generate unique user ID
+                this.currentUser.id = 'user_' + Math.random().toString(36).substr(2, 9);
+
+                // Set up event listeners
+                this.setupEventListeners();
+
+                // Show auth screen
+                this.showScreen('authScreen');
+            },
+
+            setupEventListeners() {
+                // Mode selector buttons
+                document.getElementById('modeUndercover').addEventListener('click', () => {
+                    app.selectGameMode('undercover');
+                });
+                document.getElementById('modeMrWhite').addEventListener('click', () => {
+                    app.selectGameMode('mrwhite');
+                });
+                document.getElementById('modeCustom').addEventListener('click', () => {
+                    app.selectGameMode('custom');
+                });
+
+                // Custom settings inputs
+                document.getElementById('customUndercoverCount').addEventListener('input', () => {
+                    app.validateCustomSettings();
+                });
+                document.getElementById('customMrWhiteCount').addEventListener('input', () => {
+                    app.validateCustomSettings();
+                });
+
+                // Room code input
+                document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.joinRoom();
+                    }
+                });
+            },
+
+            // ==================== SCREEN NAVIGATION ====================
+            showScreen(screenId) {
+                // Hide all screens
+                document.querySelectorAll('[id$="Screen"]').forEach(el => {
+                    el.classList.add('hidden');
+                });
+                // Show target screen
+                const screen = document.getElementById(screenId);
+                if (screen) {
+                    screen.classList.remove('hidden');
+                    screen.classList.add('fade-in');
+                }
+            },
+
+            goToAuth() {
+                this.unsubscribe();
+                this.currentRoom = null;
+                this.currentUser.roomCode = null;
+                this.showScreen('authScreen');
+            },
+
+            goToCreateRoom() {
+                const name = document.getElementById('playerName').value.trim();
+                if (!name) {
+                    this.showError('Please enter your name');
+                    return;
+                }
+                this.currentUser.name = name;
+                this.selectedMode = null;
+                this.showScreen('createRoomScreen');
+            },
+
+            goToJoinRoom() {
+                const name = document.getElementById('playerName').value.trim();
+                if (!name) {
+                    this.showError('Please enter your name');
+                    return;
+                }
+                this.currentUser.name = name;
+                this.showScreen('joinRoomScreen');
+            },
+
+            // ==================== ROOM CREATION ====================
+            selectGameMode(mode) {
+                this.selectedMode = mode;
+
+                // Update UI
+                document.getElementById('modeUndercover').classList.remove('selected');
+                document.getElementById('modeMrWhite').classList.remove('selected');
+                document.getElementById('modeCustom').classList.remove('selected');
+
+                const customSettings = document.getElementById('customSettings');
+                const createRoomBtn = document.getElementById('createRoomBtn');
+
+                if (mode === 'undercover') {
+                    document.getElementById('modeUndercover').classList.add('selected');
+                    customSettings.classList.add('hidden');
+                    createRoomBtn.disabled = false;
+                } else if (mode === 'mrwhite') {
+                    document.getElementById('modeMrWhite').classList.add('selected');
+                    customSettings.classList.add('hidden');
+                    createRoomBtn.disabled = false;
+                } else if (mode === 'custom') {
+                    document.getElementById('modeCustom').classList.add('selected');
+                    customSettings.classList.remove('hidden');
+                    this.validateCustomSettings();
+                }
+            },
+
+            validateCustomSettings() {
+                const undercover = parseInt(document.getElementById('customUndercoverCount').value) || 0;
+                const mrwhite = parseInt(document.getElementById('customMrWhiteCount').value) || 0;
+                const createRoomBtn = document.getElementById('createRoomBtn');
+
+                // Need at least 1 special role (undercover or mr white)
+                createRoomBtn.disabled = (undercover + mrwhite) === 0;
+            },
+
+            async createRoom() {
+                try {
+                    this.showLoading('Creating room...');
+
+                    let undercoverCount = 0;
+                    let mrWhiteCount = 0;
+
+                    // Get settings based on selected mode
+                    if (this.selectedMode === 'undercover') {
+                        undercoverCount = 1;
+                        mrWhiteCount = 0;
+                    } else if (this.selectedMode === 'mrwhite') {
+                        undercoverCount = 1;
+                        mrWhiteCount = 1;
+                    } else if (this.selectedMode === 'custom') {
+                        undercoverCount = parseInt(document.getElementById('customUndercoverCount').value) || 0;
+                        mrWhiteCount = parseInt(document.getElementById('customMrWhiteCount').value) || 0;
+                    }
+
+                    // Generate 4-letter room code
+                    const roomCode = this.generateRoomCode();
+
+                    // Prepare room data
+                    const roomData = {
+                        id: roomCode,
+                        host_id: this.currentUser.id,
+                        players: [
+                            {
+                                id: this.currentUser.id,
+                                name: this.currentUser.name,
+                                role: null,
+                                word: null,
+                                is_host: true
+                            }
+                        ],
+                        status: 'lobby',
+                        settings: {
+                            undercover_count: undercoverCount,
+                            mr_white_count: mrWhiteCount
+                        },
+                        current_words: {
+                            civilian_word: null,
+                            undercover_word: null
+                        }
+                    };
+
+                    // Insert room to Supabase
+                    const { data, error } = await this.supabase
+                        .from('rooms')
+                        .insert([roomData])
+                        .select();
+
+                    if (error) throw error;
+
+                    this.currentUser.roomCode = roomCode;
+                    this.gameState.isHost = true;
+                    this.currentRoom = data[0];
+
+                    this.hideLoading();
+                    this.enterLobby();
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Error creating room:', error);
+                    this.showError('Failed to create room. Try again.');
+                }
+            },
+
+            // ==================== ROOM JOINING ====================
+            async joinRoom() {
+                try {
+                    const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+                    
+                    if (!roomCode || roomCode.length !== 4) {
+                        this.showError('Invalid room code format');
+                        return;
+                    }
+
+                    this.showLoading('Joining room...');
+
+                    // Fetch room
+                    const { data, error } = await this.supabase
+                        .from('rooms')
+                        .select('*')
+                        .eq('id', roomCode)
+                        .single();
+
+                    if (error || !data) {
+                        this.hideLoading();
+                        this.showError('Room not found');
+                        document.getElementById('joinError').classList.remove('hidden');
+                        document.getElementById('joinError').textContent = 'Room code not found';
+                        return;
+                    }
+
+                    // Check if game has already started
+                    if (data.status !== 'lobby') {
+                        this.hideLoading();
+                        this.showError('Game has already started');
+                        return;
+                    }
+
+                    // Add player to room
+                    const newPlayer = {
+                        id: this.currentUser.id,
+                        name: this.currentUser.name,
+                        role: null,
+                        word: null,
+                        is_host: false
+                    };
+
+                    const updatedPlayers = [...data.players, newPlayer];
+
+                    const { error: updateError } = await this.supabase
+                        .from('rooms')
+                        .update({ players: updatedPlayers })
+                        .eq('id', roomCode);
+
+                    if (updateError) throw updateError;
+
+                    this.currentUser.roomCode = roomCode;
+                    this.currentRoom = data;
+                    this.gameState.isHost = false;
+
+                    this.hideLoading();
+                    this.enterLobby();
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Error joining room:', error);
+                    this.showError('Failed to join room');
+                }
+            },
+
+            // ==================== LOBBY ====================
+            async enterLobby() {
+                this.showScreen('lobbyScreen');
+                this.updateLobbyUI();
+                this.subscribeToRoomChanges();
+            },
+
+            updateLobbyUI() {
+                const room = this.currentRoom;
+                
+                document.getElementById('roomCodeDisplay').textContent = room.id;
+                document.getElementById('playerCountDisplay').textContent = room.players.length;
+
+                // Update players list
+                const playersList = document.getElementById('playersListContainer');
+                playersList.innerHTML = '';
+                room.players.forEach((player, index) => {
+                    const playerEl = document.createElement('div');
+                    playerEl.className = 'flex items-center gap-3 bg-slate-50 p-3 rounded-lg slide-in-animation';
+                    playerEl.innerHTML = `
+                        <div class="flex-1">
+                            <p class="font-semibold text-slate-800">${player.name}</p>
+                            ${player.is_host ? '<p class="text-xs text-blue-600 font-semibold">HOST</p>' : ''}
+                        </div>
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            ${index + 1}
+                        </div>
+                    `;
+                    playersList.appendChild(playerEl);
+                });
+
+                // Show/hide host settings
+                const hostSection = document.getElementById('hostSettingsSection');
+                const hostButtonsSection = document.getElementById('hostButtonsSection');
+                const playerButtonsSection = document.getElementById('playerButtonsSection');
+
+                if (this.gameState.isHost) {
+                    hostSection.classList.remove('hidden');
+                    hostButtonsSection.classList.remove('hidden');
+                    playerButtonsSection.classList.add('hidden');
+
+                    // Update settings display
+                    document.getElementById('hostUndercoverCount').textContent = room.settings.undercover_count;
+                    document.getElementById('hostMrWhiteCount').textContent = room.settings.mr_white_count;
+
+                    // Update start button disabled state
+                    const startBtn = document.getElementById('startGameBtn');
+                    const minPlayers = room.settings.undercover_count + room.settings.mr_white_count + 1;
+                    startBtn.disabled = room.players.length < minPlayers;
+                } else {
+                    hostSection.classList.add('hidden');
+                    hostButtonsSection.classList.add('hidden');
+                    playerButtonsSection.classList.remove('hidden');
+                }
+            },
+
+            subscribeToRoomChanges() {
+                // Unsubscribe from previous subscription
+                this.unsubscribe();
+
+                // Subscribe to room changes
+                this.subscription = this.supabase
+                    .channel(`room:${this.currentUser.roomCode}`)
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'rooms',
+                            filter: `id=eq.${this.currentUser.roomCode}`
+                        },
+                        (payload) => {
+                            this.handleRoomUpdate(payload.new);
+                        }
+                    )
+                    .subscribe();
+            },
+
+            handleRoomUpdate(updatedRoom) {
+                this.currentRoom = updatedRoom;
+
+                // Check current screen
+                const currentScreen = document.querySelector('[id$="Screen"]:not(.hidden)');
+                if (currentScreen?.id === 'lobbyScreen') {
+                    this.updateLobbyUI();
+                } else if (currentScreen?.id === 'gamePlayScreen') {
+                    this.updateGamePlayUI();
+                }
+
+                // If status changed to 'playing', transition to game
+                if (updatedRoom.status === 'playing' && !document.getElementById('gamePlayScreen').classList.contains('hidden')) {
+                    // Already in game
+                } else if (updatedRoom.status === 'playing') {
+                    // Transition to game (should not happen for host as they start it)
+                    this.startGameDisplay();
+                }
+
+                // If status changed to 'finished', transition to finished
+                if (updatedRoom.status === 'finished') {
+                    this.showFinishedScreen();
+                }
+            },
+
+            unsubscribe() {
+                if (this.subscription) {
+                    this.supabase.removeChannel(this.subscription);
+                    this.subscription = null;
+                }
+            },
+
+            // ==================== GAME START ====================
+            async startGame() {
+                try {
+                    this.showLoading('Starting game...');
+
+                    const room = this.currentRoom;
+                    const settings = room.settings;
+
+                    // Get random word pair
+                    const wordPair = this.getRandomWordPair();
+                    this.gameState.wordPair = wordPair;
+
+                    // Shuffle players
+                    const shuffledPlayers = this.shuffleArray([...room.players]);
+
+                    // Assign roles
+                    const updatedPlayers = shuffledPlayers.map((player, index) => {
+                        let role = null;
+                        let word = null;
+
+                        if (index < settings.undercover_count) {
+                            role = 'undercover';
+                            word = wordPair[1]; // Undercover gets Word B
+                        } else if (index < settings.undercover_count + settings.mr_white_count) {
+                            role = 'mr_white';
+                            word = null; // Mr. White gets no word
+                        } else {
+                            role = 'civilian';
+                            word = wordPair[0]; // Civilian gets Word A
+                        }
+
+                        return { ...player, role, word };
+                    });
+
+                    // Update room
+                    const { error } = await this.supabase
+                        .from('rooms')
+                        .update({
+                            players: updatedPlayers,
+                            status: 'playing',
+                            current_words: {
+                                civilian_word: wordPair[0],
+                                undercover_word: wordPair[1]
+                            }
+                        })
+                        .eq('id', room.id);
+
+                    if (error) throw error;
+
+                    this.currentRoom = { ...room, players: updatedPlayers, status: 'playing' };
+                    this.gameState.myRole = updatedPlayers.find(p => p.id === this.currentUser.id).role;
+                    this.gameState.myWord = updatedPlayers.find(p => p.id === this.currentUser.id).word;
+
+                    this.hideLoading();
+                    this.startGameDisplay();
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Error starting game:', error);
+                    this.showError('Failed to start game');
+                }
+            },
+
+            startGameDisplay() {
+                this.gameState.revealed = false;
+                this.showScreen('gamePlayScreen');
+                this.updateGamePlayUI();
+            },
+
+            updateGamePlayUI() {
+                const room = this.currentRoom;
+
+                document.getElementById('gameRoomCodeDisplay').textContent = room.id;
+                document.getElementById('gamePlayerCountDisplay').textContent = room.players.length;
+
+                // Get current player
+                const currentPlayer = room.players.find(p => p.id === this.currentUser.id);
+                this.gameState.myRole = currentPlayer.role;
+                this.gameState.myWord = currentPlayer.word;
+
+                // Update word card
+                const revealedWord = document.getElementById('revealedWord');
+                if (this.gameState.myRole === 'mr_white') {
+                    revealedWord.textContent = '???';
+                } else {
+                    revealedWord.textContent = this.gameState.myWord || '?';
+                }
+
+                // Update role display
+                const roleDisplay = document.getElementById('yourRoleDisplay');
+                let roleHTML = '';
+                if (this.gameState.myRole === 'civilian') {
+                    roleHTML = '<div class="role-badge role-civilian">CIVILIAN</div>';
+                } else if (this.gameState.myRole === 'undercover') {
+                    roleHTML = '<div class="role-badge role-undercover">UNDERCOVER</div>';
+                } else {
+                    roleHTML = '<div class="role-badge role-mrwhite">MR. WHITE</div>';
+                }
+                roleDisplay.innerHTML = roleHTML;
+
+                // Update other players list
+                const otherPlayersContainer = document.getElementById('gamePlayersListContainer');
+                otherPlayersContainer.innerHTML = '';
+                room.players
+                    .filter(p => p.id !== this.currentUser.id)
+                    .forEach((player, index) => {
+                        const playerEl = document.createElement('div');
+                        playerEl.className = 'bg-white border-2 border-slate-200 rounded-lg p-3 text-center';
+                        playerEl.innerHTML = `
+                            <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Player ${index + 1}</p>
+                            <p class="font-semibold text-slate-800 text-sm">${player.name}</p>
+                        `;
+                        otherPlayersContainer.appendChild(playerEl);
+                    });
+
+                // Reset card flip
+                this.resetCardFlip();
+            },
+
+            revealWord() {
+                const cardFlip = document.querySelector('.card-flip');
+                cardFlip.classList.toggle('flipped');
+                this.gameState.revealed = !this.gameState.revealed;
+            },
+
+            resetCardFlip() {
+                const cardFlip = document.querySelector('.card-flip');
+                if (cardFlip) {
+                    cardFlip.classList.remove('flipped');
+                }
+                this.gameState.revealed = false;
+            },
+
+            // ==================== GAME END ====================
+            async finishGame() {
+                try {
+                    this.showLoading('Ending game...');
+
+                    const { error } = await this.supabase
+                        .from('rooms')
+                        .update({ status: 'finished' })
+                        .eq('id', this.currentUser.roomCode);
+
+                    if (error) throw error;
+
+                    this.hideLoading();
+                    this.showFinishedScreen();
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Error finishing game:', error);
+                    this.showError('Failed to end game');
+                }
+            },
+
+            showFinishedScreen() {
+                this.showScreen('finishedScreen');
+                
+                const room = this.currentRoom;
+                const finalPlayersDisplay = document.getElementById('finalPlayersDisplay');
+                finalPlayersDisplay.innerHTML = '';
+
+                room.players.forEach((player, index) => {
+                    const playerEl = document.createElement('div');
+                    playerEl.className = 'bg-white border-2 border-slate-200 rounded-lg p-4 text-center';
+                    
+                    let roleHTML = '';
+                    if (player.role === 'civilian') {
+                        roleHTML = '<div class="role-badge role-civilian mt-2">CIVILIAN</div>';
+                    } else if (player.role === 'undercover') {
+                        roleHTML = '<div class="role-badge role-undercover mt-2">UNDERCOVER</div>';
+                    } else {
+                        roleHTML = '<div class="role-badge role-mrwhite mt-2">MR. WHITE</div>';
+                    }
+
+                    playerEl.innerHTML = `
+                        <p class="font-semibold text-slate-800">${player.name}</p>
+                        ${roleHTML}
+                        ${player.word ? `<p class="text-sm text-slate-500 mt-2">Word: <span class="font-bold">${player.word}</span></p>` : '<p class="text-sm text-slate-500 mt-2">Word: ???</p>'}
+                    `;
+                    finalPlayersDisplay.appendChild(playerEl);
+                });
+            },
+
+            // ==================== UTILITIES ====================
+            generateRoomCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                let code = '';
+                for (let i = 0; i < 4; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return code;
+            },
+
+            getRandomWordPair() {
+                return WORD_DATABASE[Math.floor(Math.random() * WORD_DATABASE.length)];
+            },
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            },
+
+            showLoading(text = 'Loading...') {
+                document.getElementById('loadingSpinner').classList.remove('hidden');
+                document.getElementById('spinnerText').textContent = text;
+            },
+
+            hideLoading() {
+                document.getElementById('loadingSpinner').classList.add('hidden');
+            },
+
+            showError(message) {
+                const errorToast = document.getElementById('errorToast');
+                const errorToastText = document.getElementById('errorToastText');
+                errorToastText.textContent = message;
+                errorToast.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    errorToast.classList.add('hidden');
+                }, 4000);
+            },
+
+            showSuccess(message) {
+                const successToast = document.getElementById('successToast');
+                const successToastText = document.getElementById('successToastText');
+                successToastText.textContent = message;
+                successToast.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    successToast.classList.add('hidden');
+                }, 4000);
+            }
+        };
+
+        // ==================== APP INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
 </body>
 </html>
