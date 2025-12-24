@@ -605,6 +605,7 @@
             },
             selectedMode: null,
             subscription: null,
+            pollInterval: null,
 
             // ==================== INITIALIZATION ====================
             async init() {
@@ -847,8 +848,17 @@
 
                     if (updateError) throw updateError;
 
+                    // Fetch updated room data to ensure we have latest
+                    const { data: latestRoom, error: fetchError } = await this.supabase
+                        .from('rooms')
+                        .select('*')
+                        .eq('id', roomCode)
+                        .single();
+
+                    if (fetchError) throw fetchError;
+
                     this.currentUser.roomCode = roomCode;
-                    this.currentRoom = data;
+                    this.currentRoom = latestRoom;
                     this.gameState.isHost = false;
 
                     this.hideLoading();
@@ -865,6 +875,33 @@
                 this.showScreen('lobbyScreen');
                 this.updateLobbyUI();
                 this.subscribeToRoomChanges();
+                
+                // Add polling fallback (every 2 seconds)
+                this.startPolling();
+            },
+
+            startPolling() {
+                // Clear existing poll
+                if (this.pollInterval) {
+                    clearInterval(this.pollInterval);
+                }
+
+                // Poll every 2 seconds
+                this.pollInterval = setInterval(async () => {
+                    try {
+                        const { data } = await this.supabase
+                            .from('rooms')
+                            .select('*')
+                            .eq('id', this.currentUser.roomCode)
+                            .single();
+
+                        if (data) {
+                            this.handleRoomUpdate(data);
+                        }
+                    } catch (error) {
+                        console.error('Polling error:', error);
+                    }
+                }, 2000);
             },
 
             updateLobbyUI() {
@@ -932,10 +969,13 @@
                             filter: `id=eq.${this.currentUser.roomCode}`
                         },
                         (payload) => {
+                            console.log('Room update received:', payload);
                             this.handleRoomUpdate(payload.new);
                         }
                     )
-                    .subscribe();
+                    .subscribe((status) => {
+                        console.log('Subscription status:', status);
+                    });
             },
 
             handleRoomUpdate(updatedRoom) {
@@ -967,6 +1007,10 @@
                 if (this.subscription) {
                     this.supabase.removeChannel(this.subscription);
                     this.subscription = null;
+                }
+                if (this.pollInterval) {
+                    clearInterval(this.pollInterval);
+                    this.pollInterval = null;
                 }
             },
 
