@@ -394,57 +394,105 @@
         </div>
 
         <!-- Screen: Game Play -->
-        <div id="gamePlayScreen" class="hidden flex flex-col h-full px-6 py-8 overflow-hidden">
-            <div class="mb-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-slate-500 text-xs uppercase tracking-wider">Room</p>
-                        <p class="text-2xl font-black text-blue-600" id="gameRoomCodeDisplay"></p>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-slate-500 text-xs uppercase tracking-wider">Players</p>
-                        <p class="text-2xl font-bold text-slate-800" id="gamePlayerCountDisplay">0</p>
-                    </div>
+        <div id="gamePlayScreen" class="hidden flex flex-col h-full px-4 py-4 bg-white overflow-y-auto">
+            <!-- Compact Header -->
+            <div class="flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+                <div>
+                    <p class="text-xs text-slate-500">ROOM</p>
+                    <p class="text-xl font-bold text-slate-900" id="gameRoomCodeDisplay">XXXX</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-slate-500">PLAYERS</p>
+                    <p class="text-xl font-bold text-slate-900" id="gamePlayerCountDisplay">0</p>
                 </div>
             </div>
 
-            <!-- Active Player Card -->
-            <div class="flex-1 flex flex-col items-center justify-center">
-                <p class="text-slate-500 text-sm mb-4 uppercase tracking-wider">Your Word</p>
-                
-                <div class="w-full max-w-xs h-48 mb-8 cursor-pointer" id="wordCardContainer" onclick="app.revealWord()">
-                    <div class="card-flip w-full h-full rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Current Turn - Clean & Minimal -->
+            <div class="mb-6">
+                <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Current Turn</p>
+                <div class="flex items-baseline gap-3">
+                    <p id="currentTurnPlayerName" class="text-2xl font-bold text-slate-900">Player Name</p>
+                    <p id="turnNumberDisplay" class="text-3xl font-black text-blue-600">#1</p>
+                </div>
+            </div>
+
+            <!-- Your Role Badge -->
+            <div id="yourRoleDisplay" class="mb-6"></div>
+
+            <!-- Word Card -->
+            <div class="mb-6">
+                <p class="text-xs text-slate-500 uppercase tracking-wide mb-2">Your Word</p>
+                <div class="w-full h-44 cursor-pointer" id="wordCardContainer" onclick="app.revealWord()">
+                    <div class="card-flip w-full h-full rounded-xl shadow overflow-hidden">
                         <div class="card-inner w-full h-full">
-                            <div class="card-front bg-gradient-to-br from-blue-600 to-blue-700">
+                            <div class="card-front bg-blue-600 flex items-center justify-center">
                                 <div class="text-center">
-                                    <p class="text-white text-lg font-semibold mb-2">Tap to Reveal</p>
-                                    <p class="text-blue-200 text-xs">Your Secret Word</p>
+                                    <p class="text-white text-base font-semibold">Tap to Reveal</p>
+                                    <p class="text-blue-200 text-xs mt-1">Your Word</p>
                                 </div>
                             </div>
-                            <div class="card-back bg-gradient-to-br from-slate-50 to-blue-50">
-                                <p class="text-slate-500 text-sm mb-4">YOUR WORD</p>
-                                <p id="revealedWord" class="text-6xl font-black text-blue-600 text-center px-4 break-all leading-tight"></p>
+                            <div class="card-back bg-slate-50 flex items-center justify-center">
+                                <p id="revealedWord" class="text-5xl font-bold text-blue-600 text-center px-4"></p>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <div id="yourRoleDisplay" class="text-center mb-6"></div>
             </div>
 
-            <!-- Players List -->
-            <div class="mb-6 bg-slate-50 rounded-lg p-4">
-                <h3 class="text-sm font-semibold text-slate-600 mb-3 uppercase tracking-wider">Other Players</h3>
-                <div id="gamePlayersListContainer" class="grid grid-cols-2 gap-2"></div>
+            <!-- Players Grid -->
+            <div class="mb-6">
+                <p class="text-xs text-slate-500 uppercase tracking-wide mb-3">Players</p>
+                <div id="gamePlayersListContainer" class="grid grid-cols-4 gap-2"></div>
             </div>
 
-            <!-- Game Actions -->
-            <button 
-                onclick="app.finishGame()" 
-                class="w-full py-3 bg-slate-100 text-slate-700 font-semibold rounded-lg hover:bg-slate-200 transition"
-            >
-                End Game
-            </button>
+            <!-- Status Message -->
+            <div id="gameStatusMessage" class="text-center text-sm text-slate-600 py-4">
+                <p id="statusText">Waiting for your turn...</p>
+            </div>
+            <div id="moderatorControls" class="hidden space-y-3 mt-2">
+                <button id="nextTurnBtn" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg active:scale-95 transition">Lanjut (Next)</button>
+                <button id="startVotingBtn" class="w-full py-3 bg-amber-500 text-white font-bold rounded-lg active:scale-95 transition hidden">Mulai Voting</button>
+            </div>
+        </div>
+
+        <!-- Screen: Voting Phase -->
+        <div id="votingScreen" class="hidden flex flex-col h-full px-4 py-4 bg-white overflow-y-auto">
+            <!-- Header -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Time to Vote</h2>
+                <p class="text-sm text-slate-600">Who's suspicious?</p>
+            </div>
+
+            <!-- Mr. White Input (if exists and has turn) -->
+            <div id="mrWhiteInputSection" class="hidden mb-6 bg-yellow-50 rounded-lg p-4 border-2 border-yellow-200">
+                <p class="text-sm font-semibold text-yellow-900 mb-3">🎭 Mr. White: Guess the word!</p>
+                <div class="flex gap-2">
+                    <input 
+                        id="mrWhiteGuessInput" 
+                        type="text" 
+                        placeholder="Your guess..."
+                        class="flex-1 px-3 py-2 border-2 border-yellow-300 rounded-lg focus:outline-none focus:border-yellow-500"
+                        maxlength="30"
+                    >
+                    <button 
+                        onclick="app.submitMrWhiteGuess()" 
+                        class="px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 active:scale-95 transition"
+                    >
+                        Submit
+                    </button>
+                </div>
+            </div>
+
+            <!-- Voting Buttons -->
+            <div class="mb-6">
+                <p class="text-xs text-slate-500 uppercase tracking-wide mb-3">Vote to Eliminate</p>
+                <div id="votingButtonsContainer" class="space-y-2"></div>
+            </div>
+
+            <!-- Vote Summary -->
+            <div id="voteSummarySection" class="hidden text-center text-sm text-slate-600 py-4">
+                <p id="voteSummaryText">Waiting for votes...</p>
+            </div>
         </div>
 
         <!-- Screen: Game Finished -->
@@ -457,12 +505,21 @@
                 <p class="text-slate-500 text-sm mb-8">Thanks for playing!</p>
             </div>
 
-            <button 
-                onclick="app.goToAuth()" 
-                class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition mb-4"
-            >
-                Back to Home
-            </button>
+            <div class="space-y-3 mb-4">
+                <button 
+                    id="playAgainBtn"
+                    onclick="app.playAgain()" 
+                    class="w-full py-4 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg hover:shadow-lg transition"
+                >
+                    Play Again
+                </button>
+                <button 
+                    onclick="app.goToAuth()" 
+                    class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-lg hover:shadow-lg transition"
+                >
+                    Back to Home
+                </button>
+            </div>
         </div>
 
         <!-- Loading Spinner -->
@@ -611,6 +668,7 @@
             selectedMode: null,
             subscription: null,
             pollInterval: null,
+            turnTimer: null,
 
             // ==================== INITIALIZATION ====================
             async init() {
@@ -695,6 +753,11 @@
                     return;
                 }
                 this.currentUser.name = name;
+                // Clear previous error message
+                document.getElementById('joinError').classList.add('hidden');
+                document.getElementById('joinError').textContent = '';
+                // Clear room code input
+                document.getElementById('roomCodeInput').value = '';
                 this.showScreen('joinRoomScreen');
             },
 
@@ -777,7 +840,9 @@
                         current_words: {
                             civilian_word: null,
                             undercover_word: null
-                        }
+                        },
+                        clues: [],
+                        votes: []
                     };
 
                     // Insert room to Supabase
@@ -786,7 +851,14 @@
                         .insert([roomData])
                         .select();
 
-                    if (error) throw error;
+                    if (error) {
+                        console.error('Supabase error details:', error);
+                        throw error;
+                    }
+
+                    if (!data || data.length === 0) {
+                        throw new Error('No data returned from insert');
+                    }
 
                     this.currentUser.roomCode = roomCode;
                     this.gameState.isHost = true;
@@ -797,7 +869,7 @@
                 } catch (error) {
                     this.hideLoading();
                     console.error('Error creating room:', error);
-                    this.showError('Failed to create room. Try again.');
+                    this.showError('Failed to create room. Error: ' + (error?.message || 'Unknown error'));
                 }
             },
 
@@ -881,7 +953,7 @@
                 this.updateLobbyUI();
                 this.subscribeToRoomChanges();
                 
-                // Add polling fallback (every 2 seconds)
+                // Add polling fallback (only for lobby, NOT for game)
                 this.startPolling();
             },
 
@@ -891,9 +963,16 @@
                     clearInterval(this.pollInterval);
                 }
 
-                // Poll every 2 seconds
+                // Poll every 2 seconds ONLY if in lobby
                 this.pollInterval = setInterval(async () => {
                     try {
+                        const currentScreen = document.querySelector('[id$="Screen"]:not(.hidden)');
+                        // Only poll if still in lobby
+                        if (currentScreen?.id !== 'lobbyScreen') {
+                            clearInterval(this.pollInterval);
+                            return;
+                        }
+
                         const { data } = await this.supabase
                             .from('rooms')
                             .select('*')
@@ -984,10 +1063,21 @@
             },
 
             handleRoomUpdate(updatedRoom) {
+                // Skip update jika data sama (prevent duplicate updates)
+                if (JSON.stringify(this.currentRoom) === JSON.stringify(updatedRoom)) {
+                    return;
+                }
+
                 this.currentRoom = updatedRoom;
 
                 // Check current screen
                 const currentScreen = document.querySelector('[id$="Screen"]:not(.hidden)');
+                
+                // Don't update UI if already on finished screen
+                if (currentScreen?.id === 'finishedScreen') {
+                    return;
+                }
+
                 if (currentScreen?.id === 'lobbyScreen') {
                     this.updateLobbyUI();
                 } else if (currentScreen?.id === 'gamePlayScreen') {
@@ -997,13 +1087,13 @@
                 // If status changed to 'playing', transition to game
                 if (updatedRoom.status === 'playing' && !document.getElementById('gamePlayScreen').classList.contains('hidden')) {
                     // Already in game
-                } else if (updatedRoom.status === 'playing') {
-                    // Transition to game (should not happen for host as they start it)
+                } else if (updatedRoom.status === 'playing' && currentScreen?.id !== 'gamePlayScreen') {
+                    // Transition to game (for non-host players)
                     this.startGameDisplay();
                 }
 
                 // If status changed to 'finished', transition to finished
-                if (updatedRoom.status === 'finished') {
+                if (updatedRoom.status === 'finished' && currentScreen?.id === 'gamePlayScreen') {
                     this.showFinishedScreen();
                 }
             },
@@ -1016,6 +1106,10 @@
                 if (this.pollInterval) {
                     clearInterval(this.pollInterval);
                     this.pollInterval = null;
+                }
+                if (this.turnTimer) {
+                    clearTimeout(this.turnTimer);
+                    this.turnTimer = null;
                 }
             },
 
@@ -1053,36 +1147,56 @@
                         return { ...player, role, word };
                     });
 
-                    // Update room
+                    // Sort players by turn order: Civilians first, then Undercover, then Mr. White
+                    const turnOrderedPlayers = [
+                        ...updatedPlayers.filter(p => p.role === 'civilian'),
+                        ...updatedPlayers.filter(p => p.role === 'undercover'),
+                        ...updatedPlayers.filter(p => p.role === 'mr_white')
+                    ];
+
+                    // Update room with turn-based system starting with first player
                     const { error } = await this.supabase
                         .from('rooms')
                         .update({
-                            players: updatedPlayers,
+                            players: turnOrderedPlayers,
                             status: 'playing',
+                            clues: [],
+                            votes: [],
                             current_words: {
                                 civilian_word: wordPair[0],
                                 undercover_word: wordPair[1]
-                            }
+                            },
+                            current_clue_turn: 0,
+                            clue_rounds: 0
                         })
                         .eq('id', room.id);
 
                     if (error) throw error;
 
-                    this.currentRoom = { ...room, players: updatedPlayers, status: 'playing' };
-                    this.gameState.myRole = updatedPlayers.find(p => p.id === this.currentUser.id).role;
-                    this.gameState.myWord = updatedPlayers.find(p => p.id === this.currentUser.id).word;
+                    const turnOrderIds = turnOrderedPlayers.map(p => p.id);
+                    await this.supabase.rpc('rooms_set_turn_order', {
+                        p_room_id: room.id,
+                        p_starting_player_id: turnOrderIds[0],
+                        p_turn_order: turnOrderIds
+                    });
+
+                    this.currentRoom = { ...room, players: turnOrderedPlayers, status: 'playing', current_clue_turn: 0, clue_rounds: 0 };
+                    this.gameState.myRole = turnOrderedPlayers.find(p => p.id === this.currentUser.id).role;
+                    this.gameState.myWord = turnOrderedPlayers.find(p => p.id === this.currentUser.id).word;
 
                     this.hideLoading();
                     this.startGameDisplay();
                 } catch (error) {
                     this.hideLoading();
                     console.error('Error starting game:', error);
-                    this.showError('Failed to start game');
+                    console.error('Error details:', error?.message);
+                    this.showError('Failed to start game: ' + (error?.message || 'Unknown error'));
                 }
             },
 
             startGameDisplay() {
                 this.gameState.revealed = false;
+                // clueInput removed from new UI
                 this.showScreen('gamePlayScreen');
                 this.updateGamePlayUI();
             },
@@ -1098,38 +1212,239 @@
                 this.gameState.myRole = currentPlayer.role;
                 this.gameState.myWord = currentPlayer.word;
 
-                // Don't update word card here - let it update on tap
-                // This prevents the word from showing before the flip animation
+                // Update current turn display
+                let currentIndex = typeof room.current_turn_index === 'number' ? room.current_turn_index : (room.current_clue_turn || 0);
+                const currentTurnPlayer = room.players[currentIndex];
+                document.getElementById('currentTurnPlayerName').textContent = currentTurnPlayer?.name || 'Unknown';
+                document.getElementById('turnNumberDisplay').textContent = `#${currentIndex + 1}`;
 
-                // Update role display
+                // Update role display with simple badge
                 const roleDisplay = document.getElementById('yourRoleDisplay');
-                let roleHTML = '';
-                if (this.gameState.myRole === 'civilian') {
-                    roleHTML = '<div class="role-badge role-civilian">CIVILIAN</div>';
-                } else if (this.gameState.myRole === 'undercover') {
-                    roleHTML = '<div class="role-badge role-undercover">UNDERCOVER</div>';
-                } else {
-                    roleHTML = '<div class="role-badge role-mrwhite">MR. WHITE</div>';
-                }
-                roleDisplay.innerHTML = roleHTML;
+                const roleText = this.gameState.myRole === 'civilian' ? 'CIVILIAN' : 
+                                 this.gameState.myRole === 'undercover' ? 'UNDERCOVER' : 'MR. WHITE';
+                const roleBgColor = this.gameState.myRole === 'civilian' ? 'bg-green-100 text-green-900' :
+                                   this.gameState.myRole === 'undercover' ? 'bg-red-100 text-red-900' : 'bg-yellow-100 text-yellow-900';
+                roleDisplay.innerHTML = `<div class="inline-block ${roleBgColor} px-3 py-1 rounded text-xs font-bold">${roleText}</div>`;
 
-                // Update other players list
-                const otherPlayersContainer = document.getElementById('gamePlayersListContainer');
-                otherPlayersContainer.innerHTML = '';
-                room.players
-                    .filter(p => p.id !== this.currentUser.id)
-                    .forEach((player, index) => {
-                        const playerEl = document.createElement('div');
-                        playerEl.className = 'bg-white border-2 border-slate-200 rounded-lg p-3 text-center';
-                        playerEl.innerHTML = `
-                            <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Player ${index + 1}</p>
-                            <p class="font-semibold text-slate-800 text-sm">${player.name}</p>
-                        `;
-                        otherPlayersContainer.appendChild(playerEl);
-                    });
+                // Update status message
+                const isMyTurn = currentTurnPlayer?.id === this.currentUser.id;
+                const statusText = document.getElementById('statusText');
+                if (isMyTurn) {
+                    statusText.textContent = `🎤 It's your turn to speak! Say a clue...`;
+                } else {
+                    statusText.textContent = `Listening to ${currentTurnPlayer?.name}...`;
+                }
+
+                // Update players grid - compact
+                const gamePlayersListContainer = document.getElementById('gamePlayersListContainer');
+                gamePlayersListContainer.innerHTML = '';
+                room.players.forEach((player, index) => {
+                    const isCurrentTurn = player.id === currentTurnPlayer?.id;
+                    const playerEl = document.createElement('div');
+                    playerEl.className = `text-center p-2 rounded transition ${
+                        isCurrentTurn 
+                            ? 'bg-blue-100 ring-2 ring-blue-500' 
+                            : 'bg-slate-100'
+                    }`;
+                    playerEl.innerHTML = `
+                        <p class="text-xl font-bold text-slate-900">${index + 1}</p>
+                        <p class="text-xs text-slate-700 truncate">${player.name}</p>
+                    `;
+                    gamePlayersListContainer.appendChild(playerEl);
+                });
+
+                this.updateModeratorControls();
 
                 // Reset card flip
                 this.resetCardFlip();
+            },
+
+            async votePlayer(playerId, playerName) {
+                try {
+                    const room = this.currentRoom;
+                    let updatedVotes = [...(room.votes || [])];
+
+                    // Check if already voted
+                    const existingVoteIndex = updatedVotes.findIndex(v => v.voterId === this.currentUser.id);
+
+                    if (existingVoteIndex !== -1) {
+                        // Remove previous vote if voting for same player
+                        if (updatedVotes[existingVoteIndex].votedPlayerId === playerId) {
+                            updatedVotes.splice(existingVoteIndex, 1);
+                            this.showSuccess(`Vote for ${playerName} removed`);
+                        } else {
+                            // Change vote
+                            updatedVotes[existingVoteIndex] = {
+                                voterId: this.currentUser.id,
+                                voterName: this.currentRoom.players.find(p => p.id === this.currentUser.id).name,
+                                votedPlayerId: playerId,
+                                votedPlayerName: playerName,
+                                timestamp: new Date().toISOString()
+                            };
+                            this.showSuccess(`Vote changed to ${playerName}`);
+                        }
+                    } else {
+                        // Add new vote
+                        updatedVotes.push({
+                            voterId: this.currentUser.id,
+                            voterName: this.currentRoom.players.find(p => p.id === this.currentUser.id).name,
+                            votedPlayerId: playerId,
+                            votedPlayerName: playerName,
+                            timestamp: new Date().toISOString()
+                        });
+                        this.showSuccess(`Voted for ${playerName}`);
+                    }
+
+                    // Update room with new votes
+                    const { error } = await this.supabase
+                        .from('rooms')
+                        .update({ votes: updatedVotes })
+                        .eq('id', room.id);
+
+                    if (error) throw error;
+                } catch (error) {
+                    console.error('Error voting:', error);
+                    this.showError('Failed to submit vote');
+                }
+            },
+
+            submitClue() {
+                // Removed - clues are now just turn numbers shown on card
+                return;
+            },
+
+            async nextTurn() {
+                try {
+                    const room = this.currentRoom;
+                    // Try server-side RPC advance first
+                    const { data, error } = await this.supabase.rpc('rooms_next_turn', { p_room_id: room.id });
+                    if (error) {
+                        // Fallback: advance locally via direct update
+                        let currentIndex = typeof room.current_turn_index === 'number' ? room.current_turn_index : (room.current_clue_turn || 0);
+                        let nextIndex = currentIndex + 1;
+                        let rounds = room.clue_rounds || 0;
+                        if (nextIndex >= room.players.length) {
+                            nextIndex = 0;
+                            rounds += 1;
+                        }
+                        const { error: updErr } = await this.supabase
+                            .from('rooms')
+                            .update({ current_turn_index: nextIndex, current_clue_turn: nextIndex, clue_rounds: rounds })
+                            .eq('id', room.id);
+                        if (updErr) throw updErr;
+                    }
+                    // Refresh room state so host sees immediate change
+                    const { data: fresh } = await this.supabase
+                        .from('rooms')
+                        .select('*')
+                        .eq('id', room.id)
+                        .single();
+                    if (fresh) {
+                        this.handleRoomUpdate(fresh);
+                    }
+                    await this.checkRoundComplete();
+                } catch (error) {
+                    console.error('Error moving to next turn:', error);
+                    this.showError('Failed to move to next turn');
+                }
+            },
+
+            async checkRoundComplete() {
+                try {
+                    const room = this.currentRoom;
+                    const { data, error } = await this.supabase.rpc('rooms_is_clue_round_complete', { p_room_id: room.id });
+                    if (error) return;
+                    const btn = document.getElementById('startVotingBtn');
+                    if (data === true) {
+                        btn.classList.remove('hidden');
+                    } else {
+                        btn.classList.add('hidden');
+                    }
+                } catch {}
+            },
+
+            startVotingPhase() {
+                this.showScreen('votingScreen');
+                this.updateVotingUI();
+            },
+
+            updateVotingUI() {
+                const room = this.currentRoom;
+                
+                // Check if Mr. White exists
+                const mrWhite = room.players.find(p => p.role === 'mr_white');
+                const mrWhiteInputSection = document.getElementById('mrWhiteInputSection');
+                const mrWhiteGuessInput = document.getElementById('mrWhiteGuessInput');
+                
+                if (mrWhite && mrWhite.id === this.currentUser.id) {
+                    // I'm Mr. White - show input
+                    mrWhiteInputSection.classList.remove('hidden');
+                    mrWhiteGuessInput.focus();
+                } else {
+                    // I'm not Mr. White
+                    mrWhiteInputSection.classList.add('hidden');
+                }
+
+                // Update voting buttons
+                const votingButtonsContainer = document.getElementById('votingButtonsContainer');
+                votingButtonsContainer.innerHTML = '';
+                
+                room.players
+                    .filter(p => p.id !== this.currentUser.id)  // Can't vote yourself
+                    .forEach((player) => {
+                        const voteBtn = document.createElement('button');
+                        const voteCount = (room.votes || []).filter(v => v.votedPlayerId === player.id).length;
+                        const currentVote = (room.votes || []).find(v => v.voterId === this.currentUser.id);
+                        const isVoted = currentVote && currentVote.votedPlayerId === player.id;
+                        
+                        voteBtn.className = `w-full px-4 py-3 rounded-lg border-2 transition font-semibold ${
+                            isVoted 
+                                ? 'bg-red-500 text-white border-red-600' 
+                                : 'bg-white text-slate-800 border-slate-300 hover:border-red-500'
+                        }`;
+                        voteBtn.innerHTML = `${player.name} ${voteCount > 0 ? `(${voteCount} votes)` : ''}`;
+                        voteBtn.onclick = () => this.votePlayer(player.id, player.name);
+                        
+                        votingButtonsContainer.appendChild(voteBtn);
+                    });
+            },
+
+            submitMrWhiteGuess() {
+                const guessInput = document.getElementById('mrWhiteGuessInput');
+                const guess = guessInput.value.trim();
+                
+                if (!guess) {
+                    this.showError('Please enter your guess');
+                    return;
+                }
+
+                // Store Mr. White guess in room (we'll add this field)
+                this.addMrWhiteGuess(guess);
+                guessInput.disabled = true;
+            },
+
+            async addMrWhiteGuess(guess) {
+                try {
+                    const room = this.currentRoom;
+                    
+                    const { error } = await this.supabase
+                        .from('rooms')
+                        .update({
+                            mr_white_guess: guess
+                        })
+                        .eq('id', room.id);
+
+                    if (error) throw error;
+                    this.showSuccess('Guess submitted! Now voting...');
+                } catch (error) {
+                    console.error('Error submitting Mr. White guess:', error);
+                    this.showError('Failed to submit guess');
+                }
+            },
+
+            async addClueToRoom(clue) {
+                // Removed - no clues to add anymore
+                return;
             },
 
             revealWord() {
@@ -1206,6 +1521,93 @@
                     `;
                     finalPlayersDisplay.appendChild(playerEl);
                 });
+
+                // Only show "Play Again" button if host
+                const playAgainBtn = document.getElementById('playAgainBtn');
+                if (this.gameState.isHost) {
+                    playAgainBtn.classList.remove('hidden');
+                } else {
+                    playAgainBtn.classList.add('hidden');
+                }
+            },
+
+            async playAgain() {
+                try {
+                    this.showLoading('Starting new game...');
+
+                    const room = this.currentRoom;
+                    const settings = room.settings;
+
+                    // Get random word pair
+                    const wordPair = this.getRandomWordPair();
+                    this.gameState.wordPair = wordPair;
+
+                    // Reset players to not have roles/words yet
+                    const resetPlayers = room.players.map(p => ({
+                        ...p,
+                        role: null,
+                        word: null
+                    }));
+
+                    // Shuffle players
+                    const shuffledPlayers = this.shuffleArray([...resetPlayers]);
+
+                    // Assign roles
+                    const updatedPlayers = shuffledPlayers.map((player, index) => {
+                        let role = null;
+                        let word = null;
+
+                        if (index < settings.undercover_count) {
+                            role = 'undercover';
+                            word = wordPair[1]; // Undercover gets Word B
+                        } else if (index < settings.undercover_count + settings.mr_white_count) {
+                            role = 'mr_white';
+                            word = null; // Mr. White gets no word
+                        } else {
+                            role = 'civilian';
+                            word = wordPair[0]; // Civilian gets Word A
+                        }
+
+                        return { ...player, role, word };
+                    });
+
+                    // Update room with reset turn system
+                    const { error } = await this.supabase
+                        .from('rooms')
+                        .update({
+                            players: updatedPlayers,
+                            status: 'playing',
+                            clues: [],
+                            votes: [],
+                            current_words: {
+                                civilian_word: wordPair[0],
+                                undercover_word: wordPair[1]
+                            },
+                            current_clue_turn: 0,
+                            clue_rounds: 0
+                        })
+                        .eq('id', room.id);
+
+                    if (error) throw error;
+
+                    const turnOrderIds = updatedPlayers.map(p => p.id);
+                    await this.supabase.rpc('rooms_set_turn_order', {
+                        p_room_id: room.id,
+                        p_starting_player_id: turnOrderIds[0],
+                        p_turn_order: turnOrderIds
+                    });
+
+                    this.currentRoom = { ...room, players: updatedPlayers, status: 'playing', current_clue_turn: 0, clue_rounds: 0 };
+                    this.gameState.myRole = updatedPlayers.find(p => p.id === this.currentUser.id).role;
+                    this.gameState.myWord = updatedPlayers.find(p => p.id === this.currentUser.id).word;
+
+                    this.hideLoading();
+                    this.startGameDisplay();
+                } catch (error) {
+                    this.hideLoading();
+                    console.error('Error restarting game:', error);
+                    this.showError('Failed to restart game');
+                }
             },
 
             // ==================== UTILITIES ====================
@@ -1228,6 +1630,20 @@
                     [array[i], array[j]] = [array[j], array[i]];
                 }
                 return array;
+            },
+
+            updateModeratorControls() {
+                const controls = document.getElementById('moderatorControls');
+                const nextBtn = document.getElementById('nextTurnBtn');
+                const voteBtn = document.getElementById('startVotingBtn');
+                if (this.gameState.isHost) {
+                    controls.classList.remove('hidden');
+                    nextBtn.onclick = () => this.nextTurn();
+                    voteBtn.onclick = () => this.startVotingPhase();
+                    this.checkRoundComplete();
+                } else {
+                    controls.classList.add('hidden');
+                }
             },
 
             showLoading(text = 'Loading...') {
